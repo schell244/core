@@ -3150,7 +3150,9 @@ namespace SpellInternal
     // Returns false for periodic and direct mixed spells (immolate, etc)
     bool IsSpellAppliesPeriodicAura(SpellEntry const* spellInfo)
     {
-        bool periodic = false;
+        if (!spellInfo->HasAttribute(SPELL_ATTR_PERIODICALLY_TRIGGER))
+            return false;
+        
         bool direct = false;
         for (int i = 0; i < MAX_EFFECT_INDEX; ++i)
         {
@@ -3164,28 +3166,11 @@ namespace SpellInternal
                 case SPELL_EFFECT_HEAL:
                     direct = true;
                     break;
-                case SPELL_EFFECT_APPLY_AURA:
-                    switch (spellInfo->EffectApplyAuraName[i])
-                    {
-                        case SPELL_AURA_PERIODIC_DAMAGE:
-                        case SPELL_AURA_PERIODIC_HEAL:
-                        case SPELL_AURA_PERIODIC_ENERGIZE:
-                        case SPELL_AURA_OBS_MOD_HEALTH:
-                        case SPELL_AURA_PERIODIC_LEECH:
-                        case SPELL_AURA_PERIODIC_HEALTH_FUNNEL:
-                        case SPELL_AURA_PERIODIC_MANA_LEECH:
-                        case SPELL_AURA_PERIODIC_DAMAGE_PERCENT:
-                        case SPELL_AURA_POWER_BURN_MANA:
-                        case SPELL_AURA_PERIODIC_TRIGGER_SPELL:
-                            periodic = true;
-                        default:
-                            break;
-                    }
                 default:
                     break;
             }
         }
-        return periodic && !direct;
+        return !direct;
     }
 
     bool IsPassiveSpellStackableWithRanks(SpellEntry const* spellInfo)

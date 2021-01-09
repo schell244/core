@@ -7753,32 +7753,15 @@ void SpellAuraHolder::CalculateForDebuffLimit()
         m_debuffLimitScore = 1;
 }
 
-// Fix premiers tics
+// With SPELL_ATTR_PERIODICALLY_TRIGGER, the first ticks seems to work!
+// TODO: check code for workarounds/hacks 
 void Aura::CalculatePeriodic(Player* modOwner, bool create)
 {
-    //m_modifier.periodictime = GetSpellProto()->EffectAmplitude[m_effIndex];
-
-    // prepare periodics
-    switch (GetSpellProto()->EffectApplyAuraName[m_effIndex])
-    {
-        case SPELL_AURA_PERIODIC_DAMAGE:
-        case SPELL_AURA_PERIODIC_HEAL:
-        case SPELL_AURA_PERIODIC_ENERGIZE:
-        case SPELL_AURA_OBS_MOD_HEALTH:
-        case SPELL_AURA_PERIODIC_LEECH:
-        case SPELL_AURA_PERIODIC_HEALTH_FUNNEL:
-        case SPELL_AURA_PERIODIC_MANA_LEECH:
-        case SPELL_AURA_PERIODIC_DAMAGE_PERCENT:
-        case SPELL_AURA_POWER_BURN_MANA:
-        case SPELL_AURA_PERIODIC_TRIGGER_SPELL:
-            m_isPeriodic = true;
-            break;
-        default:
-            break;
-    }
-
-    if (!m_isPeriodic)
+    if (!GetSpellProto()->HasAttribute(SPELL_ATTR_PERIODICALLY_TRIGGER))
         return;
+
+    m_isPeriodic = true;
+    m_modifier.periodictime = GetSpellProto()->EffectAmplitude[m_effIndex];
 
     // Apply casting time mods
     if (m_modifier.periodictime && modOwner)
