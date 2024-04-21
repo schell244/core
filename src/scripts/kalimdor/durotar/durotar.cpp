@@ -17,141 +17,119 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-/* ScriptData
-SDName: Durotar
-SD%Complete: 100
-SDComment: Quest support: Lazy peons
-SDCategory: Durotar
-EndScriptData */
-
 #include "scriptPCH.h"
 
 enum LazyPeon
 {
-    QUEST_LAZY_PEONS                              = 5441,
-    GO_LUMBERPILE                                 = 175784,
-    SPELL_BUFF_SLEEP                              = 17743,
-    SPELL_AWAKEN_PEON                             = 19938,
-    SAY_SPELL_HIT                                 = -1000600,
-    SAY_SPELL_HIT2                                = -1000601, //Sleepy so sleepy
-    LAZY_PEON_ENTRY                               = 10556,
-    EMOTE_WORKING                                 = 234,
-    WORKING_DURATION                              = 120000
+    QUEST_LAZY_PEONS  = 5441,
+    GO_LUMBERPILE     = 175784,
+    SPELL_BUFF_SLEEP  = 17743,
+    SPELL_AWAKEN_PEON = 19938,
+    EMOTE_WORKING     = 234,
+    SAY_HIT           = 5774, // TODO: there are probably more random texts
+    SAY_STOP          = 5056
 };
 
 enum States
 {
-    STATE_SLEEPING,
-    STATE_START_MOVING_TO_LUMBERPILE,
-    STATE_MOVING_TO_LUMBERPILE,
-    STATE_WORKING,
-    STATE_MOVING_BACK,
-    STATE_WAKEUP,
+    STATE_SLEEPING             = 0,
+    STATE_MOVING_TO_LUMBERPILE = 1,
+    STATE_WORKING              = 2,
+    STATE_MOVING_BACK          = 3,
 };
 
 struct LazyPeonAI : public ScriptedAI
 {
-    LazyPeonAI(Creature* pCreature) : ScriptedAI(pCreature)
+    explicit LazyPeonAI(Creature* pCreature) : ScriptedAI(pCreature)
     {
-        timer_before_sleep   = 0;
-        timer_before_working = 3000;
-        state                = STATE_SLEEPING;
-        timer_before_moving_to_lumberpile = 2000;
-        playerGuid.Clear();
         Reset();
     }
 
-    uint32     timer_before_sleep;
-    uint32     timer_before_working;
-    uint32     timer_before_moving_to_lumberpile;
-    uint8      state;
-    ObjectGuid playerGuid;
+    uint32 m_uiTimeBeforeSleep{};
+    uint8 m_uiState{};
+    ObjectGuid m_uiPlayerGuid{};
 
-    void OnScriptEventHappened(uint32 uiEvent, uint32 /*uiData*/, WorldObject* /*pInvoker*/) override
+    void Reset() override
     {
-        this->state = uiEvent;
+        m_uiTimeBeforeSleep = 20000; // work for 20 seconds
+        m_uiState = STATE_SLEEPING;
+        m_uiPlayerGuid.Clear();
     }
-
-    void Reset() override {}
 
     void SpellHit(SpellCaster* caster, SpellEntry const* spell) override
     {
-        if (spell->Id == SPELL_AWAKEN_PEON && m_creature->GetEntry() == LAZY_PEON_ENTRY && m_creature->HasAura(SPELL_BUFF_SLEEP))
-        {
-            playerGuid = caster->GetObjectGuid();
 
-            /** Peon wake up */
-            state = STATE_WAKEUP;
-            timer_before_moving_to_lumberpile = 0;
+        if (spell->Id != SPELL_AWAKEN_PEON)
+        {
+            return;
+        }
+
+        Player* player = caster->ToPlayer();
+        if (!player)
+        {
+            return;
+        }
+
+        if (!m_creature->HasAura(SPELL_BUFF_SLEEP))
+        {
+            DoScriptText(SAY_STOP, m_creature, player);
+            return;
+        }
+
+        if (player->GetQuestStatus(QUEST_LAZY_PEONS) == QUEST_STATUS_INCOMPLETE)
+        {
+            player->KilledMonsterCredit(m_creature->GetEntry(), m_creature->GetGUID());
+            DoScriptText(SAY_HIT, m_creature, player);
+            m_creature->RemoveAurasDueToSpell(SPELL_BUFF_SLEEP);
+
+            // Start moving
+            if (GameObject* pLumberPile = m_creature->FindNearestGameObject(GO_LUMBERPILE, 20.0f))
+            {
+                m_creature->SetWalk(true);
+                float fX, fY, fZ;
+                pLumberPile->GetContactPoint(m_creature, fX, fY, fZ, CONTACT_DISTANCE + 0.2f);
+                m_creature->GetMotionMaster()->MovePoint(1, fX, fY, fZ, MOVE_PATHFINDING);
+                m_uiState = STATE_MOVING_TO_LUMBERPILE;
+            }
         }
     }
 
     void UpdateAI(uint32 const diff) override
     {
-        switch (state)
+        switch (m_uiState)
         {
-            case STATE_SLEEPING:
-                if (!m_creature->HasAura(SPELL_BUFF_SLEEP))
-                    DoCastSpellIfCan(m_creature, SPELL_BUFF_SLEEP);
-                break;
             case STATE_WORKING:
-                if (timer_before_sleep < diff)
+            {
+                if (m_uiTimeBeforeSleep < diff)
                 {
-                    state = STATE_MOVING_BACK;
+                    m_uiState = STATE_MOVING_BACK;
                     m_creature->HandleEmoteState(0);
                     float x, y, z, o;
                     m_creature->GetHomePosition(x, y, z, o);
                     m_creature->GetMotionMaster()->MovePoint(1, x, y, z);
                 }
                 else
-                    timer_before_sleep -= diff;
-                break;
-            case STATE_WAKEUP:
-                if (timer_before_working < diff)
                 {
-                    m_creature->RemoveAurasDueToSpell(SPELL_BUFF_SLEEP);
-                    state = STATE_START_MOVING_TO_LUMBERPILE;
-                    timer_before_moving_to_lumberpile = 2000;
-                    timer_before_working = 3000;
+                    m_uiTimeBeforeSleep -= diff;
                 }
-                else
-                    timer_before_working -= diff;
                 break;
-            case STATE_START_MOVING_TO_LUMBERPILE:
-                if (timer_before_moving_to_lumberpile < diff)
+            }
+            case STATE_SLEEPING:
+            {
+                if (!m_creature->HasAura(SPELL_BUFF_SLEEP))
                 {
-                    if (GameObject* LumberPile = m_creature->FindNearestGameObject(GO_LUMBERPILE, 20.0f))
+                    if (DoCastSpellIfCan(m_creature, SPELL_BUFF_SLEEP) == CAST_OK)
                     {
-                        m_creature->SetWalk(true);
-                        /*float inv_distance = 1.5 / m_creature->GetDistance(LumberPile);
-                        m_creature->GetMotionMaster()->MovePoint(1,
-                                                           LumberPile->GetPositionX() - inv_distance * (LumberPile->GetPositionX() - m_creature->GetPositionX()),
-                                                           LumberPile->GetPositionY() - inv_distance * (LumberPile->GetPositionY() - m_creature->GetPositionY()),
-                                                           LumberPile->GetPositionZ() - inv_distance * (LumberPile->GetPositionZ() - m_creature->GetPositionZ()),
-                                                           MOVE_PATHFINDING);//not enough...
-                                                           */
-                        float fX, fY, fZ;
-                        LumberPile->GetContactPoint(m_creature, fX, fY, fZ, CONTACT_DISTANCE + 0.2f);
-                        m_creature->GetMotionMaster()->MovePoint(1, fX, fY, fZ, MOVE_PATHFINDING);
-
-                        timer_before_moving_to_lumberpile = 2000;
+                        // Reset timer
+                        m_uiTimeBeforeSleep = 20000;
                     }
-
-                    if (Player* player = m_creature->GetMap()->GetPlayer(playerGuid))
-                    {
-                        if (urand(0, 1))
-                            DoScriptText(SAY_SPELL_HIT,  m_creature, player);
-                        else
-                            DoScriptText(SAY_SPELL_HIT2, m_creature);
-                    }
-                    state = STATE_MOVING_TO_LUMBERPILE;
                 }
-                else
-                    timer_before_moving_to_lumberpile -= diff;
                 break;
-
+            }
             default:
+            {
                 break;
+            }
         }
     }
 
@@ -159,41 +137,27 @@ struct LazyPeonAI : public ScriptedAI
     {
         if (MovementType == POINT_MOTION_TYPE && id == 1)
         {
-            //sLog.nostalrius("LazyPeons Movement inform.");
-            if (state == STATE_MOVING_TO_LUMBERPILE)
+            if (m_uiState == STATE_MOVING_TO_LUMBERPILE)
             {
-                state = STATE_WORKING;
+                m_uiState = STATE_WORKING;
                 if (GameObject* LumberPile = m_creature->FindNearestGameObject(GO_LUMBERPILE, 20.0f))
+                {
                     m_creature->SetFacingToObject(LumberPile);
+                }
                 m_creature->HandleEmoteState(EMOTE_WORKING);
-                timer_before_sleep = WORKING_DURATION;
             }
-            else // STATE_MOVING_BACK
+            else
             {
-                state = STATE_SLEEPING;
-                DoCastSpellIfCan(m_creature, SPELL_BUFF_SLEEP);
+                m_uiState = STATE_SLEEPING;
             }
         }
     }
 };
 
-bool peon_wake_up(WorldObject* pCaster, uint32 spellId, SpellEffectIndex effIndex, Creature *crTarget)
-{
-    if (spellId == SPELL_AWAKEN_PEON && crTarget->GetEntry() == LAZY_PEON_ENTRY && crTarget->HasAura(SPELL_BUFF_SLEEP))
-    {
-        /** Display updated quest status */
-        if (Player* pPlayer = pCaster->ToPlayer())
-            pPlayer->KilledMonsterCredit(crTarget->GetEntry(), crTarget->GetObjectGuid());
-    }
-
-    return true;
-}
-
 CreatureAI* GetAI_LazyPeon(Creature* pCreature)
 {
     return new LazyPeonAI(pCreature);
 }
-
 
 void AddSC_durotar()
 {
@@ -201,8 +165,6 @@ void AddSC_durotar()
 
     newscript = new Script;
     newscript->Name = "LazyPeons";
-    newscript->pEffectDummyCreature = &peon_wake_up;
     newscript->GetAI = &GetAI_LazyPeon;
-
     newscript->RegisterSelf();
 }
