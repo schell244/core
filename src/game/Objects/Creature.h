@@ -90,8 +90,8 @@ class Creature : public Unit
         void LoadCreatureAddon(bool reload = false);
 
         // CreatureGroups
-        CreatureGroup* GetCreatureGroup() const { return m_creatureGroup; }
-        void SetCreatureGroup(CreatureGroup* group) { m_creatureGroup = group; }
+        std::shared_ptr<CreatureGroup> GetCreatureGroup() const { return m_creatureGroup; }
+        void SetCreatureGroup(std::shared_ptr<CreatureGroup> group) { m_creatureGroup = std::move(group); }
         void JoinCreatureGroup(Creature* leader, float dist, float angle, uint32 options);
         void LeaveCreatureGroup();
         uint32 GetSpawnFlags() const;
@@ -628,7 +628,7 @@ class Creature : public Unit
         SpellSchoolMask m_meleeDamageSchoolMask;
         uint32 m_originalEntry;
 
-        CreatureGroup* m_creatureGroup;
+        std::shared_ptr<CreatureGroup> m_creatureGroup;
 
         float m_combatStartX;
         float m_combatStartY;

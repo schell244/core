@@ -160,7 +160,7 @@ bool WaypointMovementGenerator<Creature>::OnArrived(Creature& creature)
         creature.AI()->MovementInform(WAYPOINT_MOTION_TYPE, i_currentNode);
 
     // Save last reached point in group in case of leader change
-    if (CreatureGroup* pGroup = creature.GetCreatureGroup())
+    if (std::shared_ptr<CreatureGroup> pGroup = creature.GetCreatureGroup())
         if (pGroup->GetLeaderGuid() == creature.GetObjectGuid())
             pGroup->SetLastReachedWaypoint(m_lastReachedWaypoint);
 
@@ -471,7 +471,7 @@ bool FlightPathMovementGenerator::GetResetPosition(Player&, float& x, float& y, 
 // -- PATROLS SYSTEM
 bool PatrolMovementGenerator::InitPatrol(Creature& creature)
 {
-    CreatureGroup* group = creature.GetCreatureGroup();
+    std::shared_ptr<CreatureGroup> group = creature.GetCreatureGroup();
     if (!group || !group->IsFormation() || group->GetLeaderGuid() == creature.GetObjectGuid())
     {
         sLog.Out(LOG_BASIC, LOG_LVL_ERROR, "[PatrolMovementGenerator] %s is not allowed for this generator.", creature.GetObjectGuid().GetString().c_str());

@@ -417,8 +417,6 @@ ObjectGuid CreatureGroupsManager::ConvertDBGuid(uint32 guidlow)
 void CreatureGroupsManager::Load()
 {
     uint32 oldMSTime = WorldTimer::getMSTime();
-
-    // Memory leak, but we cannot delete the loaded groups, since pointer may be present at loaded creatures
     m_groups.clear();
 
     std::unique_ptr<QueryResult> result(WorldDatabase.Query("SELECT `leader_guid`, `member_guid`, `dist`, `angle`, `flags` FROM `creature_groups` ORDER BY `leader_guid`"));
@@ -435,7 +433,7 @@ void CreatureGroupsManager::Load()
 
     uint32 count = 0;
     Field* fields;
-    CreatureGroup *currentGroup = nullptr;
+    std::shared_ptr<CreatureGroup> currentGroup = nullptr;
     BarGoLink bar(result->GetRowCount());
 
     do
@@ -460,7 +458,7 @@ void CreatureGroupsManager::Load()
         {
             if (!currentGroup || leaderGuid != currentGroup->GetOriginalLeaderGuid())
             {
-                currentGroup = new CreatureGroup(leaderGuid);
+                currentGroup = std::make_shared<CreatureGroup>(leaderGuid);
                 RegisterNewGroup(currentGroup);
             }
             currentGroup->AddMember(memberGuid, fields[2].GetFloat(), fields[3].GetFloat(), fields[4].GetUInt32());
@@ -474,7 +472,7 @@ void CreatureGroupsManager::Load()
     if (result)
     {
         Field* fields;
-        CreatureGroup *currentGroup = nullptr;
+        std::shared_ptr<CreatureGroup> currentGroup = nullptr;
 
         do
         {
@@ -536,15 +534,15 @@ void CreatureGroupsManager::Load()
     sLog.Out(LOG_BASIC, LOG_LVL_MINIMAL, ">> Loaded %u creature groups in %u ms", count, WorldTimer::getMSTime() - oldMSTime);
 }
 
-void CreatureGroupsManager::LoadCreatureGroup(ObjectGuid guid, CreatureGroup*& group)
+std::shared_ptr<CreatureGroup> CreatureGroupsManager::LoadCreatureGroup(ObjectGuid guid)
 {
-    group = nullptr;
     for (const auto& itr : m_groups)
     {
         if (itr.first == guid || itr.second->ContainsGuid(guid))
         {
-            group = itr.second;
-            break;
+            return itr.second;
         }
     }
+
+    return nullptr;
 }

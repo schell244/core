@@ -105,13 +105,13 @@ class CreatureGroupsManager
             static CreatureGroupsManager* i = new CreatureGroupsManager();
             return i;
         }
-        void LoadCreatureGroup(ObjectGuid guid, CreatureGroup*& group);
-        void RegisterNewGroup(CreatureGroup* group) { m_groups[group->GetOriginalLeaderGuid()] = group; }
+        std::shared_ptr<CreatureGroup> LoadCreatureGroup(ObjectGuid guid);
+        void RegisterNewGroup(std::shared_ptr<CreatureGroup> group) { m_groups[group->GetOriginalLeaderGuid()] = group; }
         void Load();
         void EraseCreatureGroup(ObjectGuid leaderGuid) { m_groups.erase(leaderGuid); }
-        static ObjectGuid ConvertDBGuid(uint32 guidlow);
+        static ObjectGuid ConvertDBGuid(uint32 guidLow);
     protected:
-        std::map<ObjectGuid, CreatureGroup*> m_groups;
+        std::map<ObjectGuid, std::shared_ptr<CreatureGroup>> m_groups;
 };
 
 #define sCreatureGroupsManager (CreatureGroupsManager::instance())

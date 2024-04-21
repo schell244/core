@@ -3718,7 +3718,7 @@ Creature* Map::LoadCreatureSpawnWithGroup(uint32 leaderDbGuid, bool delaySpawn)
     if (!pLeader)
         return nullptr;
 
-    if (CreatureGroup* pGroup = pLeader->GetCreatureGroup())
+    if (std::shared_ptr<CreatureGroup> pGroup = pLeader->GetCreatureGroup())
     {
         for (auto const& itr : pGroup->GetMembers())
             LoadCreatureSpawn(itr.first.GetCounter(), delaySpawn);

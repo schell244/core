@@ -138,7 +138,7 @@ void instance_ruins_of_ahnqiraj::OnCreatureEnterCombat(Creature * pCreature)
         case NPC_SWARMGUARD_NEEDLER:
         case NPC_QIRAJI_WARRIOR:
             /** Create Yeggeth list for Rajaxx Shield ability */
-            if (CreatureGroup* g = pCreature->GetCreatureGroup())
+            if (std::shared_ptr<CreatureGroup> g = pCreature->GetCreatureGroup())
                 if (g->GetOriginalLeaderGuid().GetEntry() == NPC_MAJOR_YEGGETH)
                     m_lYeggethShieldList.push_back(pCreature->GetGUID());
 

@@ -1819,7 +1819,7 @@ struct npc_guard_didierAI : public ScriptedAI
     {
         m_muleDied = false;
 
-        if (CreatureGroup* pGroup = m_creature->GetCreatureGroup())
+        if (std::shared_ptr<CreatureGroup> pGroup = m_creature->GetCreatureGroup())
             pGroup->DoForAllMembers(m_creature->GetMap(), [](Creature* pMember) { if (pMember->IsAlive()) pMember->DespawnOrUnsummon(1); });
     }
 
@@ -1835,7 +1835,7 @@ struct npc_guard_didierAI : public ScriptedAI
             m_creature->SetDefaultGossipMenuId(GOSSIP_MULE_DIED);
             m_creature->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
 
-            if (CreatureGroup* pGroup = m_creature->GetCreatureGroup())
+            if (std::shared_ptr<CreatureGroup> pGroup = m_creature->GetCreatureGroup())
                 pGroup->DoForAllMembers(m_creature->GetMap(), [](Creature* pMember)
                 {
                     if (pMember->IsAlive())
@@ -1866,7 +1866,7 @@ struct npc_guard_didierAI : public ScriptedAI
     {
         m_creature->SetReactState(REACT_AGGRESSIVE);
 
-        if (CreatureGroup* pGroup = m_creature->GetCreatureGroup())
+        if (std::shared_ptr<CreatureGroup> pGroup = m_creature->GetCreatureGroup())
             pGroup->DoForAllMembers(m_creature->GetMap(), [pAttacker](Creature* pMember)
             {
                 if (!pMember->HasReactState(REACT_AGGRESSIVE) && pMember->IsAlive())
@@ -1929,7 +1929,7 @@ struct npc_caravan_muleAI : public ScriptedAI
     {
         m_creature->SetReactState(REACT_AGGRESSIVE);
 
-        if (CreatureGroup* pGroup = m_creature->GetCreatureGroup())
+        if (std::shared_ptr<CreatureGroup> pGroup = m_creature->GetCreatureGroup())
             pGroup->DoForAllMembers(m_creature->GetMap(), [pAttacker](Creature* pMember)
         {
             if (!pMember->HasReactState(REACT_AGGRESSIVE) && pMember->IsAlive())

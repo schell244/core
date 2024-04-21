@@ -1569,9 +1569,9 @@ bool ChatHandler::HandleNpcGroupAddCommand(char* args)
     float angle = (chr->GetAngle(target) - target->GetOrientation()) + 2 * M_PI_F;
     float dist = sqrtf(pow(chr->GetPositionX() - target->GetPositionX(), int(2)) + pow(chr->GetPositionY() - target->GetPositionY(), int(2)));
 
-    CreatureGroup* group = leader->GetCreatureGroup();
+    std::shared_ptr<CreatureGroup> group = leader->GetCreatureGroup();
     if (!group)
-        group = new CreatureGroup(leader->GetObjectGuid());
+        group = std::make_shared<CreatureGroup>(leader->GetObjectGuid());
     group->AddMember(target->GetObjectGuid(), dist, angle, options);
     target->SetCreatureGroup(group);
     leader->SetCreatureGroup(group);
@@ -1618,9 +1618,9 @@ bool ChatHandler::HandleNpcGroupAddRelCommand(char* args)
     float angle = target->GetAngle(leader);//(chr->GetAngle(target) - target->GetOrientation()) + 2 * M_PI_F;
     float dist = sqrtf(pow(leader->GetPositionX() - target->GetPositionX(), int(2)) + pow(leader->GetPositionY() - target->GetPositionY(), int(2)));
 
-    CreatureGroup* group = leader->GetCreatureGroup();
+    std::shared_ptr<CreatureGroup> group = leader->GetCreatureGroup();
     if (!group)
-        group = new CreatureGroup(leader->GetObjectGuid());
+        group = std::make_shared<CreatureGroup>(leader->GetObjectGuid());
     group->AddMember(target->GetObjectGuid(), dist, angle, options);
     target->SetCreatureGroup(group);
     leader->SetCreatureGroup(group);
@@ -1642,7 +1642,7 @@ bool ChatHandler::HandleNpcGroupDelCommand(char *args)
         return false;
     }
 
-    CreatureGroup* g = target->GetCreatureGroup();
+    std::shared_ptr<CreatureGroup> g = target->GetCreatureGroup();
     if (!g)
     {
         PSendSysMessage("%s [GUID=%u] is not in a group.", target->GetName(), target->GetGUIDLow());

@@ -134,7 +134,7 @@ struct boss_vectusAI : public ScriptedAI
                     for (const auto& creature : creatures)
                     {
                         creature->CastSpell(creature, SPELL_VIEWING_ROOM_STUDENT_TRANSFORM_EFFECT, true);
-                        if (CreatureGroup* myGroup = creature->GetCreatureGroup())
+                        if (std::shared_ptr<CreatureGroup> myGroup = creature->GetCreatureGroup())
                         {
                             myGroup->RemoveMember(creature->GetGUID());
                             creature->SetCreatureGroup(nullptr);
@@ -270,7 +270,7 @@ struct npc_scholomance_studentAI : public ScriptedAI
                 Creature * Marduke = (Creature*) m_creature->GetMap()->GetUnit(m_pInstance->GetData64(DATA_MARDUKE));
                 if ( Vectus && Marduke )
                 {
-                    if (CreatureGroup* myGroup = Vectus->GetCreatureGroup())
+                    if (std::shared_ptr<CreatureGroup> myGroup = Vectus->GetCreatureGroup())
                     {
                         if(myGroup == Marduke->GetCreatureGroup())
                         {

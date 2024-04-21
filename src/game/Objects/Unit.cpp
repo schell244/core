@@ -1176,7 +1176,7 @@ void Unit::Kill(Unit* pVictim, SpellEntry const* spellProto, bool durabilityLoss
         if (pCreatureVictim->AI())
             pCreatureVictim->AI()->JustDied(this);
 
-        if (CreatureGroup* group = pCreatureVictim->GetCreatureGroup())
+        if (std::shared_ptr<CreatureGroup> group = pCreatureVictim->GetCreatureGroup())
             group->OnMemberDied(pCreatureVictim);
 
         if (TemporarySummon* pSummon = pCreatureVictim->IsTemporarySummon() ? static_cast<TemporarySummon*>(pCreatureVictim) : nullptr)

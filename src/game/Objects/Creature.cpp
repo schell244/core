@@ -232,7 +232,7 @@ void Creature::AddToWorld()
         GetMap()->InsertObject<Creature>(GetObjectGuid(), this);
 
     if (!m_creatureGroup && HasStaticDBSpawnData())
-        sCreatureGroupsManager->LoadCreatureGroup(GetObjectGuid(), m_creatureGroup);
+        sCreatureGroupsManager->LoadCreatureGroup(GetObjectGuid());
 
     if (m_creatureGroup)
     {
@@ -1860,7 +1860,7 @@ bool Creature::LoadFromDB(uint32 guidlow, Map* map, bool force)
     ObjectGuid fullGuid = ObjectGuid(HIGHGUID_UNIT, data->creature_id[0], guidlow);
     m_creatureData = data;
     m_creatureDataAddon = sObjectMgr.GetCreatureAddon(guidlow);
-    sCreatureGroupsManager->LoadCreatureGroup(fullGuid, m_creatureGroup);
+    sCreatureGroupsManager->LoadCreatureGroup(fullGuid);
 
     uint32 const creatureId = m_creatureGroup ? m_creatureGroup->ChooseCreatureId(fullGuid, data, map) : data->ChooseCreatureId();
     CreatureInfo const* cinfo = sObjectMgr.GetCreatureTemplate(creatureId);
@@ -3185,7 +3185,7 @@ bool Creature::IsInEvadeMode() const
 
     if (!IsInCombat() && GetMotionMaster()->GetCurrentMovementGeneratorType() == PATROL_MOTION_TYPE)
     {
-        if (CreatureGroup* pGroup = GetCreatureGroup())
+        if (std::shared_ptr<CreatureGroup> pGroup = GetCreatureGroup())
             if (pGroup->IsFormation() && pGroup->GetLeaderGuid() != GetObjectGuid())
                 if (Creature* pLeader = GetMap()->GetCreature(pGroup->GetLeaderGuid()))
                     if (pLeader->IsInEvadeMode())
@@ -4253,16 +4253,16 @@ uint32 Creature::GetVirtualItemInventoryType(WeaponAttackType slot) const
 
 void Creature::JoinCreatureGroup(Creature* leader, float dist, float angle, uint32 options)
 {
-    if (CreatureGroup* myGroup = GetCreatureGroup())
+    if (GetCreatureGroup())
     {
         sLog.Out(LOG_BASIC, LOG_LVL_ERROR, "%s attempts to join group, but is already in one.", GetGuidStr().c_str());
         return;
     }
 
-    CreatureGroup* group = leader->GetCreatureGroup();
+    std::shared_ptr<CreatureGroup> group = leader->GetCreatureGroup();
     if (!group)
     {
-        group = new CreatureGroup(leader->GetObjectGuid());
+        group = std::make_shared<CreatureGroup>(CreatureGroup(leader->GetObjectGuid()));
         leader->SetCreatureGroup(group);
     }
     group->AddMember(GetObjectGuid(), dist, angle, options);
@@ -4273,12 +4273,11 @@ void Creature::JoinCreatureGroup(Creature* leader, float dist, float angle, uint
 
 void Creature::LeaveCreatureGroup()
 {
-    if (CreatureGroup* pGroup = GetCreatureGroup())
+    if (std::shared_ptr<CreatureGroup> pGroup = GetCreatureGroup())
     {
         if (pGroup->GetOriginalLeaderGuid() == GetObjectGuid())
         {
             pGroup->DisbandGroup(this);
-            delete pGroup;
         }
         else
         {

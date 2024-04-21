@@ -2473,7 +2473,7 @@ bool Map::ScriptCommand_StartScriptOnGroup(ScriptInfo const& script, WorldObject
 
     if (Creature* pCreature = pSource->ToCreature())
     {
-        if (CreatureGroup* pGroup = pCreature->GetCreatureGroup())
+        if (std::shared_ptr<CreatureGroup> pGroup = pCreature->GetCreatureGroup())
         {
             if (pGroup->GetLeaderGuid() != pCreature->GetObjectGuid())
                 ScriptsStart(sGenericScripts, scriptId, pGroup->GetLeaderGuid(), target ? target->GetObjectGuid() : ObjectGuid());

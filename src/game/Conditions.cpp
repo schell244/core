@@ -630,14 +630,14 @@ bool inline ConditionEntry::Evaluate(WorldObject const* target, Map const* map, 
         }
         case CONDITION_CREATURE_GROUP_MEMBER:
         {
-            CreatureGroup const* pGroup = source->ToCreature()->GetCreatureGroup();
+            std::shared_ptr<CreatureGroup> pGroup = source->ToCreature()->GetCreatureGroup();
             if (!pGroup)
                 return false;
             return !m_value1 || pGroup->GetOriginalLeaderGuid().GetCounter() == m_value1;
         }
         case CONDITION_CREATURE_GROUP_DEAD:
         {
-            CreatureGroup const* pGroup = static_cast<Creature const*>(source)->GetCreatureGroup();
+            std::shared_ptr<CreatureGroup> pGroup = static_cast<Creature const*>(source)->GetCreatureGroup();
             if (!pGroup)
                 return true;
 
