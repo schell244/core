@@ -113,7 +113,8 @@ enum BellHourlySoundFX
     BELLTOLLALLIANCE   = 6594, // Stormwind
     BELLTOLLNIGHTELF   = 6674, // Darnassus
     BELLTOLLDWARFGNOME = 7234, // Ironforge
-    LIGHTHOUSEFOGHORN  = 7197  // Lighthouses
+    LIGHTHOUSEFOGHORN  = 7197, // Lighthouses
+    WORGEN_SCREAM      = 6017  // SFK Custom
 };
 
 enum BellHourlySoundZones
@@ -126,7 +127,9 @@ enum BellHourlySoundZones
     IRONFORGE_ZONE           = 1537,
     TELDRASSIL_ZONE          = 141,
     DARNASSUS_ZONE           = 1657,
-    ASHENVALE_ZONE           = 331
+    ASHENVALE_ZONE           = 331,
+    SCARLET_MONASTERY_ZONE   = 796,
+    SILVERPINE_FOREST_ZONE   = 130
 };
 
 enum LightHouseAreas
@@ -139,23 +142,23 @@ enum LightHouseAreas
 enum BellHourlyObjects
 {
     // bell gameobjects
-    GO_HORDE_BELL = 175885,
+    GO_HORDE_BELL    = 175885,
     GO_ALLIANCE_BELL = 176573 // Also used for lighthouse spawns
 };
 
 enum BellHourlyMisc
 {
     GAME_EVENT_HOURLY_BELLS = 78,
-    EVENT_RING_BELL = 1,
-    EVENT_TIME = 2
+    EVENT_RING_BELL         = 1,
+    EVENT_TIME              = 2
 };
 
 struct go_bells : public GameObjectAI
 {
-    go_bells(GameObject* go) : GameObjectAI(go), _soundId(0), once(true)
+    explicit go_bells(GameObject* go) : GameObjectAI(go), _soundId(0), once(true)
     {
-
         uint32 zoneId = me->GetZoneId();
+
         switch (me->GetEntry())
         {
             case GO_HORDE_BELL:
@@ -164,15 +167,25 @@ struct go_bells : public GameObjectAI
                 {
                     case TIRISFAL_ZONE:
                     case UNDERCITY_ZONE:
+                    case SCARLET_MONASTERY_ZONE:
                     case HILLSBRAD_FOOTHILLS_ZONE:
                     case DUSKWOOD_ZONE:
-                         _soundId = BELLTOLLHORDE;  // undead bell sound 
-                         break;
+                    {
+                        _soundId = BELLTOLLHORDE;  // undead bell sound
+                        break;
+                    }
+                    case SILVERPINE_FOREST_ZONE:
+                    {
+                        _soundId = WORGEN_SCREAM;
+                        break;
+                    }
                     default:
+                    {
                         _soundId = BELLTOLLTRIBAL; // drum sound
                         break;
+                    }
                 }
-            break;
+                break;
             }
             case GO_ALLIANCE_BELL:
             {
@@ -181,26 +194,33 @@ struct go_bells : public GameObjectAI
                     _soundId = LIGHTHOUSEFOGHORN;
                     return;
                 }
-
                 switch (zoneId)
                 {
                     case IRONFORGE_ZONE:
                     case DUN_MOROGH_ZONE:
+                    {
                         _soundId = BELLTOLLDWARFGNOME; // horn sound
                         break;
+                    }
                     case TELDRASSIL_ZONE:
                     case DARNASSUS_ZONE:
                     case ASHENVALE_ZONE:
-                        _soundId = BELLTOLLNIGHTELF;   // nightelf bell sound 
+                    {
+                        _soundId = BELLTOLLNIGHTELF;   // nightelf bell sound
                         break;
+                    }
                     default:
+                    {
                         _soundId = BELLTOLLALLIANCE;   // human bell sound
                         break;
+                    }
                 }
-            break;
+                break;
             }
-        default:
-            sLog.Out(LOG_SCRIPTS, LOG_LVL_ERROR, "go_bells() called with invalid object, ID: %u", me->GetEntry());
+            default:
+            {
+                sLog.Out(LOG_SCRIPTS, LOG_LVL_ERROR, "go_bells() called with invalid object, ID: %u", me->GetEntry());
+            }
         }
     }
 
@@ -243,7 +263,7 @@ struct go_bells : public GameObjectAI
                     // Get how many times it should ring
                     time_t rawtime;
                     time(&rawtime);
-                    struct tm * timeinfo = localtime(&rawtime);
+                    struct tm* timeinfo = localtime(&rawtime);
                     uint8 _rings = (timeinfo->tm_hour) % 12;
                     _rings = (_rings == 0) ? 12 : _rings; // 00:00 and 12:00
 
@@ -251,22 +271,27 @@ struct go_bells : public GameObjectAI
                     // On official servers, this sound is played once very two minutes.
                     // This would require a additional event with a 2 minute timer.
                     // For now, play the correct sound at least once every hour.
-                    if (_soundId == BELLTOLLDWARFGNOME || _soundId == LIGHTHOUSEFOGHORN)
+                    if (_soundId == BELLTOLLDWARFGNOME || _soundId == LIGHTHOUSEFOGHORN || _soundId == WORGEN_SCREAM)
                     {
                         _rings = 1;
                     }
 
                     // Schedule ring event
                     for (auto i = 0; i < _rings; ++i)
+                    {
                         m_events.ScheduleEvent(EVENT_RING_BELL, Seconds(i * 4 + 1));
-
+                    }
                     break;
                 }
                 case EVENT_RING_BELL:
+                {
                     me->PlayDirectSound(_soundId);
                     break;
+                }
                 default:
+                {
                     break;
+                }
             }
         }
     }
