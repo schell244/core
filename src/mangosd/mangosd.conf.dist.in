@@ -201,6 +201,23 @@ BindIP = "0.0.0.0"
 #        Default: 1 (Enabled)
 #                 0 (Disabled)
 #
+#    vmap.ignoreM2ObjectLos
+#        Skip line of sight check for m2 models (trees, certain walls, ...).
+#        Default: 1 (Skip)
+#                 0 (Not Skip)
+#
+#    vmap.checkMeleeLos
+#        Perform line of sight check before allowing meele attacks.
+#        Enable to prevent possible exploits.
+#                  1 (Enabled)
+#         Default: 0 (Disabled)
+#
+#    vmap.gameobjectLootLos
+#        Perform line of sight check before allowing to open gameobjects.
+#        Enable to prevent possible exploits.
+#                  1 (Enabled)
+#         Default: 0 (Disabled)
+#
 #    mmap.enabled
 #        Enable/Disable pathfinding using mmaps
 #        Default: 1 (Enabled)
@@ -274,6 +291,9 @@ Terrain.Preload.Instances  = 0
 vmap.enableLOS = 1
 vmap.enableHeight = 1
 vmap.enableIndoorCheck = 1
+vmap.ignoreM2ObjectLos = 1
+vmap.checkMeleeLos = 0
+vmap.gameobjectLootLos = 0
 mmap.enabled = 1
 Collision.Models.Unload = 1
 DetectPosCollision = 1

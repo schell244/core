@@ -102,6 +102,7 @@ struct boss_skeramAI : public ScriptedAI
         // obtain partial paths next to it. Normally, these are ignored, but we can set a
         // flag to allow them. They may put us out of LoS so allow autos through them too.
         //m_creature->AddUnitState(UNIT_STAT_ALLOW_INCOMPLETE_PATH | UNIT_STAT_ALLOW_LOS_ATTACK);
+        m_creature->AddUnitState(UNIT_STAT_ALLOW_LOS_ATTACK);
         m_creature->SetMeleeZReach(74.0f);
     }
 

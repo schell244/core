@@ -428,6 +428,7 @@ enum UnitState
     UNIT_STAT_NO_SEARCH_FOR_OTHERS   = 0x08000000, // MoveInLineOfSight will not be called
     UNIT_STAT_NO_BROADCAST_TO_OTHERS = 0x10000000, // ScheduleAINotify will not be called
     UNIT_STAT_AI_USES_MOVE_IN_LOS    = 0x20000000, // AI overrides MoveInLineOfSight so always search for others
+    UNIT_STAT_ALLOW_LOS_ATTACK       = 0x40000000, // allow melee attacks without LoS
 
     // masks (only for check)
 
@@ -522,6 +523,8 @@ static char const* UnitStateToString(uint32 state)
             return "No Broadcast to Others";
         case UNIT_STAT_AI_USES_MOVE_IN_LOS:
             return "AI Uses Move in LoS";
+        case UNIT_STAT_ALLOW_LOS_ATTACK:
+            return "Allow LoS Attack";
     }
     return "UNKNOWN";
 }

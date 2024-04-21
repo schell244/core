@@ -430,8 +430,21 @@ namespace VMAP
 
     bool WorldModel::IntersectRay(G3D::Ray const& ray, float& distance, bool stopAtFirstHit, bool ignoreM2Model) const
     {
+        // #ifdef needed for extractors build
+#ifdef sWorld
+        if (sWorld.getConfig(CONFIG_BOOL_IGNORE_M2_MODEL_LOS))
+        {
+            if (ignoreM2Model && (modelFlags & MOD_M2))
+            {
+                return false;
+            }
+        }
+#else
         if (ignoreM2Model && (modelFlags & MOD_M2))
+        {
             return false;
+        }
+#endif
 
         // small M2 workaround, maybe better make separate class with virtual intersection funcs
         // in any case, there's no need to use a bound tree if we only have one submodel
