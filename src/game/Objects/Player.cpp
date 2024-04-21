@@ -5903,54 +5903,43 @@ void Player::UpdateCombatSkills(Unit const* pVictim, WeaponAttackType attType, b
 
     // No weapon skill gain while in tree/feral form
     if (!defence && IsShapeShifted())
-        return; 
+        return;
 
-    uint32 playerLevel      = GetLevel();
-    uint32 currentSkillValue = defence ? GetBaseDefenseSkillValue() : GetBaseWeaponSkillValue(attType);
-    uint32 currentSkillMax  = 5 * playerLevel;
+    const uint32 playerLevel       = GetLevel();
+    const uint32 currentSkillValue = defence ? GetBaseDefenseSkillValue() : GetBaseWeaponSkillValue(attType);
+    const uint32 currentSkillMax   = 5 * playerLevel;
+    const auto skillDiff           = currentSkillMax - currentSkillValue;
 
     // Max skill reached for level.
     // Can in some cases be less than 0: having max skill and then .level -1 as example.
-    if (currentSkillMax <= currentSkillValue)
+    if (skillDiff <= 0)
         return;
 
-    uint32 skillDiff = currentSkillMax - currentSkillValue;
+    const uint32 mobLevel = defence ? pVictim->GetLevelForTarget(this) : pVictim->GetLevel(); // defense: pVictim = player
 
-    // Calculate base chance to increase
-    float chance = 0.0f;
-    if (defence) // TODO: more research needed. Seems to increase slower than weapon skill. Using old formula:
+    // Add to world.config?
+    // uint8 greyLevelForSkill = MaNGOS::XP::GetGrayLevel(currentSkillValue / 5);
+    // Don't increase weapon/defence skill when moblevel is to low according to players current skill value
+    // if (mobLevel + 5 < greyLevelForSkill)
+    //    return;
+
+    // Increase/reduce chance due to mob level
+    float mobLevelBonus = mobLevel / (currentSkillValue / 5.0f);
+
+    // Intellect bonus
+    float intellectBonus = float(GetStat(STAT_INTELLECT)) * skillDiff / float(playerLevel + 100);
+    intellectBonus = std::max(0.0f, intellectBonus);
+
+    // Calculate chance
+    float chance = 100.0f * mobLevelBonus * intellectBonus * skillDiff / float(currentSkillMax);
+
+    // Defence should increase slower than weapon skill
+    if (defence)
     {
-        uint32 greylevel = MaNGOS::XP::GetGrayLevel(playerLevel);
-        uint32 mobLevel = pVictim->GetLevelForTarget(this);
-
-        if (mobLevel > playerLevel + 5)
-            mobLevel = playerLevel + 5;
-
-        int32 lvldif = mobLevel - greylevel;
-        if (lvldif < 3)
-            lvldif = 3;
-
-        chance = float(3 * lvldif * skillDiff) / playerLevel;
-    }
-    else // weapon skill https://classic.wowhead.com/guides/classic-wow-weapon-skills
-    {
-        if (currentSkillMax * 0.9f > currentSkillValue)
-        {
-            // Skill progress: 1% - 90% - chance decreases from 100% to 50%
-            chance = std::min(100.0f, float(currentSkillMax * 0.9f * 50) / currentSkillValue);
-        }
-        else
-        {
-            // Skill progress: 90% - 100% - chance decreases from 50% to a minimum which is level dependent
-            chance = (0.5f - 0.0168966f * currentSkillValue * (300.0f / currentSkillMax) + 0.0152069f * currentSkillMax * (300.0f / currentSkillMax)) * 100.0f;
-            if (skillDiff <= 3)
-                chance *= (0.5f / (4 - skillDiff));
-        }      
-
-        // Add intellect bonus (capped at 10% - guessed)
-        chance += std::min(10.0f, 0.02f * GetStat(STAT_INTELLECT));
+        chance *= 0.8f;
     }
 
+    // Chance can't be more than 100%
     chance = std::min(100.0f, chance);
 
     sLog.Out(LOG_BASIC, LOG_LVL_DEBUG, "Player::UpdateCombatSkills(defence=%d, playerLevel=%i) -> (%i/%i) chance to increase skill is %f ", defence, playerLevel, currentSkillValue, currentSkillMax, chance);
