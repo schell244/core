@@ -5727,7 +5727,7 @@ SpellCastResult Spell::CheckCast(bool strict)
             if (target->IsTaxiFlying() && !m_spellInfo->HasEffect(SPELL_EFFECT_SUMMON_PLAYER))
                 return SPELL_FAILED_BAD_TARGETS;
 
-            if (!m_IsTriggeredSpell)
+            if (!m_IsTriggeredSpell && !m_caster->IsGameObject()) // needed when CONFIG_BOOL_IGNORE_M2_MODEL_LOS = 1
             {
                 if (!(m_spellInfo->AttributesEx2 & SPELL_ATTR_EX2_IGNORE_LINE_OF_SIGHT) && !m_caster->IsWithinLOSInMap(target))
                     return SPELL_FAILED_LINE_OF_SIGHT;
@@ -5905,6 +5905,42 @@ SpellCastResult Spell::CheckCast(bool strict)
         if (goTarget->GetGOInfo()->CannotBeUsedUnderImmunity() && m_casterUnit && m_casterUnit->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE))
             return SPELL_FAILED_DAMAGE_IMMUNE;
 #endif
+        // Check line of sight before allowing to loot chest gameobjects
+        if (sWorld.getConfig(CONFIG_BOOL_GO_LOOT_LOS_CHECK))
+        {
+            if (goTarget->GetGoType() == GAMEOBJECT_TYPE_CHEST)
+            {
+                bool checkLos = true;
+
+                // Some objects need LOS exemption, otherwise players won't be able to interact
+                switch (goTarget->GetEntry())
+                {
+                case 160845: // Dark Coffer (BRD)
+                case 161495: // Secret Safe (BRD)
+                case 165554: // Heart of the Mountain (BRD)
+                case 759:    // The Holy Spring (Stranglethorn vale)
+                case 103820: // Red Rocket (Scarlet Monastery, Gnomeregan)
+                {
+                    checkLos = false;
+                    break;
+                }
+                default:
+                {
+                    checkLos = true;
+                    break;
+                }
+                }
+
+                if (!m_IsTriggeredSpell && !(m_spellInfo->AttributesEx2 & SPELL_ATTR_EX2_IGNORE_LINE_OF_SIGHT)
+                    && checkLos
+                    && !goTarget->GetGOInfo()->chest.minSuccessOpens                // don't check for gathering nodes, too many are halfway in walls
+                    && !goTarget->HasFlag(GAMEOBJECT_FLAGS, GO_FLAG_INTERACT_COND)  // don't check for quest items
+                    && !m_caster->IsWithinLOSInMap(goTarget, false))
+                {
+                    return SPELL_FAILED_LINE_OF_SIGHT;
+                }
+            }
+        }
     }
     else if (m_targets.IsEmpty())
     {
