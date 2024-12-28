@@ -428,9 +428,16 @@ SpellMissInfo SpellCaster::MeleeSpellHitResult(Unit const* pVictim, SpellEntry c
     // Check for attack from behind
     if (from_behind)
     {
-        // Can`t dodge from behind in PvP (but its possible in PvE)
-        if (GetTypeId() == TYPEID_PLAYER && pVictim->GetTypeId() == TYPEID_PLAYER)
-            canDodge = false;
+        // Not possible to dodge when:
+        // 1) (blizzlike) attacking from behind in PvP
+        // 2) (custom) player attacks from behind with stealth
+        if (IsPlayer())
+        {
+            if (pVictim->IsPlayer() || ((Player*)this)->HasAuraType(SPELL_AURA_MOD_STEALTH))
+            {
+                canDodge = false;
+            }
+        }
 
         // Can`t parry or block
         canParry = false;
