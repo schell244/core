@@ -11,6 +11,20 @@ option(ENABLE_MAILSENDER              "Enables support for sending emails via se
 # Other options
 set(SUPPORTED_CLIENT_BUILD "CLIENT_BUILD_1_12_1" CACHE STRING "Client version the core will support")
 
+set(CXX_STANDARD_SELECTION "C++14" CACHE STRING "C++ standard version")
+set_property(CACHE CXX_STANDARD_SELECTION PROPERTY STRINGS "C++14" "C++17" "C++20" "C++23")
+
+string(REGEX REPLACE "^C\\+\\+" "" CMAKE_CXX_STANDARD "${CXX_STANDARD_SELECTION}")
+set(CMAKE_CXX_STANDARD ${CMAKE_CXX_STANDARD})
+
+# Warn if C++ standard is higher than officially supported version
+if(CMAKE_CXX_STANDARD VERSION_GREATER "14")
+  message(WARNING
+    "C++ standard ${CMAKE_CXX_STANDARD} is selected, but C++14 is the officially supported version.\n"
+    "Using a higher standard may cause compilation errors or unexpected behavior."
+  )
+endif()
+
 if(UNIX)
   option(DEBUG_SYMBOLS "Include Debug Symbols" ON)
 endif()
@@ -64,6 +78,7 @@ message(STATUS
     USE_REALMMERGE            Build helper tool for merging character databases
     ENABLE_MAILSENDER         Enables support for sending emails via sendgrid.com (requires libcurl)
     SUPPORTED_CLIENT_BUILD    Client version the core will support
+    CXX_STANDARD_SELECTION    C++ standard version (C++11, C++14, C++17, C++20, C++23)
 
 
   To set an option simply type -D<OPTION>=<VALUE> after 'cmake <srcs>'.
