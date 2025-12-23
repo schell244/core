@@ -2392,8 +2392,8 @@ void CombatBotBaseAI::LearnPremadeSpecForClass()
     {
         // Use gm command to learn spells on trainers and items.
         LearnRandomTalents();
-        ChatHandler(me).HandleLearnAllTrainerCommand("");
-        ChatHandler(me).HandleLearnAllItemsCommand("");
+        ChatHandler(me).HandleLearnAllTrainerCommand((char*)"");
+        ChatHandler(me).HandleLearnAllItemsCommand((char*)"");
     }
 }
 

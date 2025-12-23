@@ -7934,10 +7934,14 @@ class basic_json
         AllocatorType<T> alloc;
         auto deleter = [&](T * object)
         {
+            if (object != nullptr)
+            {
+                object->~T();
+            }
             alloc.deallocate(object, 1);
         };
         std::unique_ptr<T, decltype(deleter)> object(alloc.allocate(1), deleter);
-        alloc.construct(object.get(), std::forward<Args>(args)...);
+        ::new (static_cast<void*>(object.get())) T(std::forward<Args>(args)...);
         assert(object != nullptr);
         return object.release();
     }
@@ -8103,7 +8107,7 @@ class basic_json
                 case value_t::object:
                 {
                     AllocatorType<object_t> alloc;
-                    alloc.destroy(object);
+                    object->~object_t();
                     alloc.deallocate(object, 1);
                     break;
                 }
@@ -8111,7 +8115,7 @@ class basic_json
                 case value_t::array:
                 {
                     AllocatorType<array_t> alloc;
-                    alloc.destroy(array);
+                    array->~array_t();
                     alloc.deallocate(array, 1);
                     break;
                 }
@@ -8119,7 +8123,7 @@ class basic_json
                 case value_t::string:
                 {
                     AllocatorType<string_t> alloc;
-                    alloc.destroy(string);
+                    string->~string_t();
                     alloc.deallocate(string, 1);
                     break;
                 }
@@ -10618,7 +10622,7 @@ class basic_json
                 if (is_string())
                 {
                     AllocatorType<string_t> alloc;
-                    alloc.destroy(m_value.string);
+                    m_value.string->~string_t();
                     alloc.deallocate(m_value.string, 1);
                     m_value.string = nullptr;
                 }
@@ -10724,7 +10728,7 @@ class basic_json
                 if (is_string())
                 {
                     AllocatorType<string_t> alloc;
-                    alloc.destroy(m_value.string);
+                    m_value.string->~string_t();
                     alloc.deallocate(m_value.string, 1);
                     m_value.string = nullptr;
                 }
